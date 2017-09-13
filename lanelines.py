@@ -150,9 +150,16 @@ def lanelines_main():
     #img = cv2.imread("test_images/straight_lines1.jpg")
     color_binary, combined_binary = threshold_pipeline(img)
 
-    # cv2.imshow("bluegreen-thresholds", color_binary)
+    cv2.imshow("bluegreen-thresholds", color_binary)
     #cv2.imshow("combined-thresholds", combined_binary)
     #cv2.waitKey(20000)
+
+    # TODO this warping is really broken, fix
+    src = np.float32([[0, 670], [1200, 670], [0, 450], [1280, 450]])
+    dst = np.float32([[569, 220], [710, 220], [0, 0], [1280, 0]])
+    overhead_img = dashboard_to_overhead(color_binary, src, dst)
+
+    cv2.imshow("overhead", overhead_img)
 
     cv2.waitKey(20000)
 
@@ -161,5 +168,5 @@ def lanelines_main():
     cv2.destroyAllWindows()
 
 
-#if __name__ == "__main__":
-#    lanelines_main()
+if __name__ == "__main__":
+    lanelines_main()
