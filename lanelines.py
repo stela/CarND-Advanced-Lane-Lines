@@ -12,8 +12,8 @@ debug = False
 
 
 # TODO Make a list of calibration images, instead of single image
-fname = 'camera_cal/calibration1.jpg'
-fnames = glob.glob('camera_cal/calibration*.jpg')
+calibration_f_name = 'camera_cal/calibration1.jpg'
+calibration_f_names = glob.glob('camera_cal/calibration*.jpg')
 
 # Initially copied from course materials, "9. Finding Corners"
 def drawCorners(fname):
@@ -70,14 +70,14 @@ def image_calibration_params(img, objpoints, imgpoints):
     return mtx, dist
 
 def calibration_params(imgpoints, objpoints):
-    for fname in fnames:
+    for fname in calibration_f_names:
         # Display the image, with corner-dots but without calibration
         # drawCorners(fname)
 
         # Accumulate calibration data
         img = cv2.imread(fname)
         accumulate_calibration(img, imgpoints, objpoints)
-    an_image = cv2.imread(fnames[0])
+    an_image = cv2.imread(calibration_f_names[0])
     mtx, dist = image_calibration_params(an_image, objpoints, imgpoints)
     return dist, mtx
 
@@ -146,22 +146,30 @@ def lanelines_main():
 
 
     # TODO threshold image by combining sobel ops + color space conversion
-    img = cv2.imread("test_images/test5.jpg")
+    original_img = cv2.imread("test_images/straight_lines1.jpg")
+    undistorted_img = undistort_image(original_img, mtx, dist)
     #img = cv2.imread("test_images/straight_lines1.jpg")
-    color_binary, combined_binary = threshold_pipeline(img)
+    color_binary, combined_binary = threshold_pipeline(undistorted_img)
 
-    cv2.imshow("bluegreen-thresholds", color_binary)
+    #cv2.imshow("bluegreen-thresholds", color_binary)
     #cv2.imshow("combined-thresholds", combined_binary)
     #cv2.waitKey(20000)
 
-    # TODO this warping is really broken, fix
-    src = np.float32([[0, 670], [1200, 670], [0, 450], [1280, 450]])
-    dst = np.float32([[569, 220], [710, 220], [0, 0], [1280, 0]])
+    height, width = undistorted_img.shape[:2]
+    # Origin is top left corner, y increases downwards
+    # source below goes (too?) far ahead almost to horizon
+    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
+    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
+
+
+
     overhead_img = dashboard_to_overhead(color_binary, src, dst)
 
+    cv2.imshow("undistorted", undistorted_img)
+    cv2.imshow("bluegreen-thresholds", color_binary)
     cv2.imshow("overhead", overhead_img)
 
-    cv2.waitKey(20000)
+    cv2.waitKey(200000)
 
     # TODO watch walkthrough from around 26:29 and forward:
     # https://www.youtube.com/watch?v=vWY8YUayf9Q&list=PLAwxTw4SYaPkz3HerxrHlu1Seq8ZA7-5P&index=4
