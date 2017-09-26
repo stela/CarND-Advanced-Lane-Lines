@@ -209,19 +209,48 @@ def find_lane_lines(binary_warped):
     # Fit a second order polynomial to each
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
-    return out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy
 
 
-def visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds):
+#    return out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy
+
+
+# def visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds):
     # Generate x and y values for plotting
     ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
+    out_img = draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, ploty)
+
     # TODO prettify out_img a bit?
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
     return out_img, ploty, left_fitx, right_fitx
+
+
+# Googled for cv2.fillPoly/cv2.polylines usage and found this function (slightly modified) at
+# https://github.com/rioffe/CarND-Advanced-Lane-Lines-Solution
+#
+# Sort of like
+# plt.plot(left_fitx, ploty, color='yellow')
+# plt.plot(right_fitx, ploty, color='yellow')
+# but for cv2
+#
+# Draw a thick polynomial to show curvature of the detected lines
+# And recast the x and y points into usable format for cv2.fillPoly()
+# since rubric seems to require this
+def draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, ploty):
+    left_line_window1 = np.array([np.transpose(np.vstack([left_fitx - margin / 2, ploty]))])
+    left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx + margin / 2, ploty])))])
+    left_line_pts = np.hstack((left_line_window1, left_line_window2))
+    right_line_window1 = np.array([np.transpose(np.vstack([right_fitx - margin / 2, ploty]))])
+    right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx + margin / 2, ploty])))])
+    right_line_pts = np.hstack((right_line_window1, right_line_window2))
+    window_img = np.zeros_like(out_img)
+    cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
+    cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
+    out_img = cv2.addWeighted(out_img, 1.0, window_img, 0.3, gamma=1.0)
+    return out_img
 
 
 def lanelines_main():
@@ -253,11 +282,14 @@ def lanelines_main():
 #    binary_warped = dashboard_to_overhead(color_binary, src, dst)
     binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
-    # First find the left and right lane lines and their parameters
-    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
+    # Find the left and right lane lines and their parameters
+#    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
 
-    out_img, ploty, left_fitx, right_fitx =\
-        visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
+    # Mark left/right lines with colors, calculate left/right fit polynomials
+    out_img, ploty, left_fitx, right_fitx = \
+        find_lane_lines(binary_warped)
+#       visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
+
 
     #cv2.imshow("undistorted", undistorted_img)
     #cv2.imshow("bluegreen-thresholds", color_binary)
