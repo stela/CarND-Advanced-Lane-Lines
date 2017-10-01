@@ -3,6 +3,8 @@ import cv2
 import glob
 # importing matplotlib.pyplot causes TK to crash on init :(
 import matplotlib.pyplot as plt
+from moviepy.editor import VideoFileClip
+from functools import partial
 
 # prepare object points
 nx = 9
@@ -292,21 +294,7 @@ def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Mi
     result = cv2.addWeighted(original_img, 1, newwarp, 0.3, 0)
     return result
 
-
-
-def lanelines_main():
-    objpoints = []  # 3D points in real world space
-    imgpoints = []  # 2D points in image plane
-
-    dist, mtx = calibration_params(imgpoints, objpoints)
-    #print("Calibration parameters: \nmtx={}, \ndist={}".format(mtx, dist))
-    #show_distorted_and_undistorted(an_image, mtx, dist)
-    #show_distorted_and_undistorted(cv2.imread("test_images/test6.jpg"), mtx, dist)
-
-
-    # TODO threshold image by combining sobel ops + color space conversion
-    # original_img = cv2.imread("test_images/straight_lines1.jpg")
-    original_img = cv2.imread("test_images/test5.jpg")
+def process_image(original_img, mtx, dist):
     undistorted_img = undistort_image(original_img, mtx, dist)
     #img = cv2.imread("test_images/straight_lines1.jpg")
     color_binary, combined_binary = threshold_pipeline(undistorted_img)
@@ -321,30 +309,57 @@ def lanelines_main():
     src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
     dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
 
-#    binary_warped = dashboard_to_overhead(color_binary, src, dst)
+    #    binary_warped = dashboard_to_overhead(color_binary, src, dst)
     M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
     # Find the left and right lane lines and their parameters
-#    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
+    #    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
 
     # Mark left/right lines with colors, calculate left/right fit polynomials
     out_img, ploty, left_fitx, right_fitx = \
         find_lane_lines(binary_warped)
-#       visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
+    #       visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
 
     left_curverad, right_curverad = radius_of_curvatute(ploty, left_fitx, right_fitx)
-    print("left radius: {} right radius: {}".format(left_curverad, right_curverad))
-    # TODO plot left/right radius onto original image
+    #print("left radius: {} right radius: {}".format(left_curverad, right_curverad))
+    # TODO plot left/right radius and center-offset onto original image
 
     Minv = np.linalg.inv(M)
     original_img_overlay = project_onto_original(original_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
+    return original_img_overlay
+
+def process_video(input, output, process_image_fun):
+    clip = VideoFileClip(input)
+    vid_clip = clip.fl_image(process_image_fun)
+    vid_clip.write_videofile(output, audio=False)
+    return
+
+def lanelines_main():
+    objpoints = []  # 3D points in real world space
+    imgpoints = []  # 2D points in image plane
+
+    dist, mtx = calibration_params(imgpoints, objpoints)
+    #print("Calibration parameters: \nmtx={}, \ndist={}".format(mtx, dist))
+    #show_distorted_and_undistorted(an_image, mtx, dist)
+    #show_distorted_and_undistorted(cv2.imread("test_images/test6.jpg"), mtx, dist)
+
+
+    # TODO threshold image by combining sobel ops + color space conversion
+    # original_img = cv2.imread("test_images/straight_lines1.jpg")
+    original_img = cv2.imread("test_images/test5.jpg")
+    original_img_overlay = process_image(original_img, mtx, dist)
+
 
     #cv2.imshow("undistorted", undistorted_img)
     #cv2.imshow("bluegreen-thresholds", color_binary)
     #cv2.imshow("overhead", binary_warped)
-    cv2.imshow("out_img", out_img)
+    #cv2.imshow("out_img", out_img)
     cv2.imshow("overlayed", original_img_overlay)
 
+    part_process_image = partial(process_image, mtx=mtx, dist=dist)
+    process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
+    #process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
+    #process_video('harder_challenge_video.mp4', 'output_images/harder_challenge_video_out.mp4', part_process_image)
 
     cv2.waitKey(200000)
 
