@@ -131,7 +131,7 @@ def dashboard_to_overhead(img, src, dst):
     img_size = (img.shape[1], img.shape[0])  # keep same size as input image
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_NEAREST)
-    return warped
+    return M, warped
 
 
 # Originally from "33. Finding the Lines"
@@ -271,6 +271,28 @@ def radius_of_curvatute(ploty, left_fit, right_fit):
 
     return left_curverad, right_curverad
 
+# Project polynomials onto original image
+# Originally from course materials "36. Tips and Tricks for the Project" but modified
+def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Minv):
+    # Create an image to draw the lines on
+    warp_zero = np.zeros_like(warped).astype(np.uint8)
+    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    newwarp = cv2.warpPerspective(color_warp, Minv, (original_img.shape[1], original_img.shape[0]))
+    # Combine the result with the original image
+    result = cv2.addWeighted(original_img, 1, newwarp, 0.3, 0)
+    return result
+
+
 
 def lanelines_main():
     objpoints = []  # 3D points in real world space
@@ -300,7 +322,7 @@ def lanelines_main():
     dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
 
 #    binary_warped = dashboard_to_overhead(color_binary, src, dst)
-    binary_warped = dashboard_to_overhead(combined_binary, src, dst)
+    M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
     # Find the left and right lane lines and their parameters
 #    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
@@ -312,11 +334,16 @@ def lanelines_main():
 
     left_curverad, right_curverad = radius_of_curvatute(ploty, left_fitx, right_fitx)
     print("left radius: {} right radius: {}".format(left_curverad, right_curverad))
+    # TODO plot left/right radius onto original image
+
+    Minv = np.linalg.inv(M)
+    original_img_overlay = project_onto_original(original_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
 
     #cv2.imshow("undistorted", undistorted_img)
     #cv2.imshow("bluegreen-thresholds", color_binary)
     #cv2.imshow("overhead", binary_warped)
     cv2.imshow("out_img", out_img)
+    cv2.imshow("overlayed", original_img_overlay)
 
 
     cv2.waitKey(200000)
