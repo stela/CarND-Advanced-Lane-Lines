@@ -222,7 +222,6 @@ def find_lane_lines(binary_warped):
 
     out_img = draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, ploty)
 
-    # TODO prettify out_img a bit?
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
     return out_img, ploty, left_fitx, right_fitx
@@ -253,6 +252,26 @@ def draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, ploty):
     return out_img
 
 
+# Measuring radius of curvature, originally from course materials
+# "35. Measuring Curvature"
+def radius_of_curvatute(ploty, left_fit, right_fit):
+    # Define conversions in x and y from pixels space to meters
+    ym_per_pix = 30/720 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+
+    # Fit new polynomials to x,y in world space
+    left_fit_cr = np.polyfit(ploty*ym_per_pix, left_fit*xm_per_pix, 2)
+    right_fit_cr = np.polyfit(ploty*ym_per_pix, right_fit*xm_per_pix, 2)
+    # Calculate the new radii of curvature
+    y_eval = np.max(ploty)
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+    # Now our radius of curvature is in meters
+    # Example values: 632.1 m    626.2 m
+
+    return left_curverad, right_curverad
+
+
 def lanelines_main():
     objpoints = []  # 3D points in real world space
     imgpoints = []  # 2D points in image plane
@@ -264,7 +283,8 @@ def lanelines_main():
 
 
     # TODO threshold image by combining sobel ops + color space conversion
-    original_img = cv2.imread("test_images/straight_lines1.jpg")
+    # original_img = cv2.imread("test_images/straight_lines1.jpg")
+    original_img = cv2.imread("test_images/test5.jpg")
     undistorted_img = undistort_image(original_img, mtx, dist)
     #img = cv2.imread("test_images/straight_lines1.jpg")
     color_binary, combined_binary = threshold_pipeline(undistorted_img)
@@ -290,6 +310,8 @@ def lanelines_main():
         find_lane_lines(binary_warped)
 #       visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
 
+    left_curverad, right_curverad = radius_of_curvatute(ploty, left_fitx, right_fitx)
+    print("left radius: {} right radius: {}".format(left_curverad, right_curverad))
 
     #cv2.imshow("undistorted", undistorted_img)
     #cv2.imshow("bluegreen-thresholds", color_binary)
