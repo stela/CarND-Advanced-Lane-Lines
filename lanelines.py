@@ -1,8 +1,6 @@
 import numpy as np
 import cv2
 import glob
-# importing matplotlib.pyplot causes TK to crash on init :(
-import matplotlib.pyplot as plt
 from moviepy.editor import VideoFileClip
 from functools import partial
 
@@ -18,7 +16,7 @@ calibration_f_name = 'camera_cal/calibration1.jpg'
 calibration_f_names = glob.glob('camera_cal/calibration*.jpg')
 
 # Initially copied from course materials, "9. Finding Corners"
-def drawCorners(fname):
+def draw_corners(fname):
     img = cv2.imread(fname)
     cv2.imshow('input-img', img)
     cv2.waitKey(500)
@@ -141,7 +139,7 @@ def find_lane_lines(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
     bottom_half_y = np.int(binary_warped.shape[0]/2)
-    histogram = np.sum(binary_warped[bottom_half_y:,:], axis=0)
+    histogram = np.sum(binary_warped[bottom_half_y:, :], axis=0)
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
 
     # Find the peak of the left and right halves of the histogram
@@ -169,6 +167,8 @@ def find_lane_lines(binary_warped):
     # Create empty lists to receive left and right lane pixel indices
     left_lane_inds = []
     right_lane_inds = []
+    left_lane_centers = []
+    right_lane_centers = []
 
     # Step through the windows one by one
     for window in range(nwindows):
@@ -195,8 +195,10 @@ def find_lane_lines(binary_warped):
         # If you found > minpix pixels, recenter next window on their mean position
         if len(good_left_inds) > minpix:
             leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
+            left_lane_centers.append(leftx_current)
         if len(good_right_inds) > minpix:
             rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
+            right_lane_centers.append(rightx_current)
 
     # Concatenate the arrays of indices
     left_lane_inds = np.concatenate(left_lane_inds)
@@ -212,11 +214,6 @@ def find_lane_lines(binary_warped):
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
-
-#    return out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy
-
-
-# def visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds):
     # Generate x and y values for plotting
     ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
@@ -226,7 +223,7 @@ def find_lane_lines(binary_warped):
 
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-    return out_img, ploty, left_fitx, right_fitx
+    return out_img, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers
 
 
 # Googled for cv2.fillPoly/cv2.polylines usage and found this function (slightly modified) at
@@ -256,7 +253,7 @@ def draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, ploty):
 
 # Measuring radius of curvature, originally from course materials
 # "35. Measuring Curvature"
-def radius_of_curvatute(ploty, left_fit, right_fit):
+def radius_of_curvature(ploty, left_fit, right_fit):
     # Define conversions in x and y from pixels space to meters
     ym_per_pix = 30/720 # meters per pixel in y dimension
     xm_per_pix = 3.7/700 # meters per pixel in x dimension
@@ -270,8 +267,35 @@ def radius_of_curvatute(ploty, left_fit, right_fit):
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     # Now our radius of curvature is in meters
     # Example values: 632.1 m    626.2 m
-
+    #
+    # Using "test2.jpg" which seems to be the location with 1 km radius, I get left: 388 m and right: 562 m
+    # Close enough to 1 km I guess ;-)
     return left_curverad, right_curverad
+
+
+def sideways_offset_lane_center(width, left_centers, right_centers):
+    """
+    Find sideways-offset to center of lane.
+    
+    See "36. Tips and Tricks for the Project" - "Offset" for the algorithm
+
+    :param width: image width in pixels
+    :type width: int
+    :param left_centers: per-window array of left lane line centers, from find_lane_lines()
+    :type left_centers: list of int
+    :param right_centers: per-window array of right lane line centers, from find_lane_lines()
+    :type right_centers: list of int
+    :return: number of meters off-center
+    :rtype: float
+    """
+    camera_center = width/2
+    bottom_left = left_centers[0]
+    bottom_right = right_centers[0]
+    lanes_center = np.mean([bottom_left, bottom_right])
+    # use same conversion as radius_of_curvature() above
+    meters_sideways_offset = (lanes_center - camera_center) * (3.7/700)
+    return meters_sideways_offset
+
 
 # Project polynomials onto original image
 # Originally from course materials "36. Tips and Tricks for the Project" but modified
@@ -286,7 +310,7 @@ def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Mi
     pts = np.hstack((pts_left, pts_right))
 
     # Draw the lane onto the warped blank image
-    cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+    cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
 
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
     newwarp = cv2.warpPerspective(color_warp, Minv, (original_img.shape[1], original_img.shape[0]))
@@ -316,17 +340,22 @@ def process_image(original_img, mtx, dist):
     #    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
 
     # Mark left/right lines with colors, calculate left/right fit polynomials
-    out_img, ploty, left_fitx, right_fitx = \
+    out_img, ploty, left_fitx, right_fitx, left_lane_center, right_lane_center = \
         find_lane_lines(binary_warped)
     #       visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
 
-    left_curverad, right_curverad = radius_of_curvatute(ploty, left_fitx, right_fitx)
-    #print("left radius: {} right radius: {}".format(left_curverad, right_curverad))
-    # TODO plot left/right radius and center-offset onto original image
+    left_curverad, right_curverad = radius_of_curvature(ploty, left_fitx, right_fitx)
+    meters_sideways_offset = sideways_offset_lane_center(binary_warped.shape[1], left_lane_center, right_lane_center)
+    #print("left radius: {} right radius: {} offset: {}".format(left_curverad, right_curverad, meters_sideways_offset))
 
     Minv = np.linalg.inv(M)
-    original_img_overlay = project_onto_original(original_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
-    return original_img_overlay
+    original_img_overlaid = project_onto_original(original_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(original_img_overlaid,'Offset: %f m' %(meters_sideways_offset), (33, 100), font, 1, (255, 255, 255), 2)
+    cv2.putText(original_img_overlaid,'Left radius: %.1f m' %(left_curverad), (33, 150), font, 1, (255, 255, 255), 2)
+    cv2.putText(original_img_overlaid,'Right radius: %.1f m' %(right_curverad), (33, 200), font, 1, (255, 255, 255), 2)
+
+    return original_img_overlaid
 
 def process_video(input, output, process_image_fun):
     clip = VideoFileClip(input)
@@ -346,7 +375,7 @@ def lanelines_main():
 
     # TODO threshold image by combining sobel ops + color space conversion
     # original_img = cv2.imread("test_images/straight_lines1.jpg")
-    original_img = cv2.imread("test_images/test5.jpg")
+    original_img = cv2.imread("test_images/test2.jpg")
     original_img_overlay = process_image(original_img, mtx, dist)
 
 
@@ -357,9 +386,9 @@ def lanelines_main():
     cv2.imshow("overlayed", original_img_overlay)
 
     part_process_image = partial(process_image, mtx=mtx, dist=dist)
-    process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
-    #process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
-    #process_video('harder_challenge_video.mp4', 'output_images/harder_challenge_video_out.mp4', part_process_image)
+    #process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
+    process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
+    process_video('harder_challenge_video.mp4', 'output_images/harder_challenge_video_out.mp4', part_process_image)
 
     cv2.waitKey(200000)
 
