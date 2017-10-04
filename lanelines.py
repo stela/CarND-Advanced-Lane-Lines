@@ -386,7 +386,7 @@ def lanelines_main():
     cv2.imshow("overlayed", original_img_overlay)
 
     part_process_image = partial(process_image, mtx=mtx, dist=dist)
-    #process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
+    process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
     process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
     process_video('harder_challenge_video.mp4', 'output_images/harder_challenge_video_out.mp4', part_process_image)
 
