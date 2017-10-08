@@ -19,7 +19,7 @@ The goals / steps of this project are the following:
 
 [undistorted_test1]: ./output_images/test1_undistorted.jpg "Road Transformed"
 [threshold_image]: ./output_images/test1_thresholds.jpg "Thresholding Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
+[straight_lines1_warped]: ./output_images/straight_lines1_warped.jpg "Warp Example"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
@@ -75,33 +75,25 @@ Here's an example of my output for this step, using the previous undistorted ima
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes the function [dashboard_to_overhead()](lanelines.py#L121).  The `dashboard_to_overhead()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
 
 ```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
+    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
 ```
 
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 610, 441      | 450, 0        |
+| 669, 441      | 830, 0        |
+| 258, 682      | 450, 720      |
+| 1049, 682     | 830, 720      |
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+I verified that my perspective transform was working as expected by comparing the `src` and `dst` points onto the `straight_lines1.jpg` test image and its warped counterpart and verifying that they are on the same spot on the road and appear parallel in the warped image.
 
-![alt text][image4]
+![warped image][straight_lines1_warped]
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
