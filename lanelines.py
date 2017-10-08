@@ -10,9 +10,6 @@ ny = 6
 
 debug = False
 
-
-# TODO Make a list of calibration images, instead of single image
-calibration_f_name = 'camera_cal/calibration1.jpg'
 calibration_f_names = glob.glob('camera_cal/calibration*.jpg')
 
 # Initially copied from course materials, "9. Finding Corners"
@@ -69,7 +66,10 @@ def image_calibration_params(img, objpoints, imgpoints):
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray_shape, None, None)
     return mtx, dist
 
-def calibration_params(imgpoints, objpoints):
+def calibration_params():
+    objpoints = []  # 3D points in real world space
+    imgpoints = []  # 2D points in image plane
+
     for fname in calibration_f_names:
         # Display the image, with corner-dots but without calibration
         # drawCorners(fname)
@@ -364,10 +364,7 @@ def process_video(input, output, process_image_fun):
     return
 
 def lanelines_main():
-    objpoints = []  # 3D points in real world space
-    imgpoints = []  # 2D points in image plane
-
-    dist, mtx = calibration_params(imgpoints, objpoints)
+    dist, mtx = calibration_params()
     #print("Calibration parameters: \nmtx={}, \ndist={}".format(mtx, dist))
     #show_distorted_and_undistorted(an_image, mtx, dist)
     #show_distorted_and_undistorted(cv2.imread("test_images/test6.jpg"), mtx, dist)
