@@ -86,14 +86,6 @@ def undistort_image(img, mtx, dist):
     return cv2.undistort(img, mtx, dist, None, mtx)
 
 
-def show_distorted_and_undistorted(an_image, mtx, dist):
-    undistorted1 = undistort_image(an_image, mtx, dist)
-    cv2.imshow("undistorted", undistorted1)
-    cv2.imshow("distorted", an_image)
-    cv2.waitKey(10000)
-    cv2.destroyAllWindows()
-
-
 # Originally copied from 30. Color and Gradient
 # assume img in BGR format
 def threshold_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
@@ -117,7 +109,7 @@ def threshold_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     # Stack each channel
     # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might
     # be beneficial to replace this channel with something else.
-    color_binary = np.dstack(( np.zeros_like(sxbinary), sxbinary, s_binary))
+    color_binary = np.dstack((np.zeros_like(sxbinary), sxbinary, s_binary))
 
     combined_binary = np.zeros_like(sxbinary)
     combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
@@ -365,9 +357,7 @@ def process_video(input, output, process_image_fun):
 
 def lanelines_main():
     dist, mtx = calibration_params()
-    #print("Calibration parameters: \nmtx={}, \ndist={}".format(mtx, dist))
-    #show_distorted_and_undistorted(an_image, mtx, dist)
-    #show_distorted_and_undistorted(cv2.imread("test_images/test6.jpg"), mtx, dist)
+    # print("Calibration parameters: \nmtx={}, \ndist={}".format(mtx, dist))
 
 
     # TODO threshold image by combining sobel ops + color space conversion
@@ -376,22 +366,19 @@ def lanelines_main():
     original_img_overlay = process_image(original_img, mtx, dist)
 
 
-    #cv2.imshow("undistorted", undistorted_img)
-    #cv2.imshow("bluegreen-thresholds", color_binary)
-    #cv2.imshow("overhead", binary_warped)
-    #cv2.imshow("out_img", out_img)
-    cv2.imshow("overlayed", original_img_overlay)
+    # cv2.imshow("undistorted", undistorted_img)
+    # cv2.imshow("bluegreen-thresholds", color_binary)
+    # cv2.imshow("overhead", binary_warped)
+    # cv2.imshow("out_img", out_img)
+    # cv2.imshow("overlayed", original_img_overlay)
 
     part_process_image = partial(process_image, mtx=mtx, dist=dist)
     process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
     process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
     process_video('harder_challenge_video.mp4', 'output_images/harder_challenge_video_out.mp4', part_process_image)
 
-    cv2.waitKey(200000)
-
-    # TODO watch walkthrough from around 26:29 and forward:
-    # https://www.youtube.com/watch?v=vWY8YUayf9Q&list=PLAwxTw4SYaPkz3HerxrHlu1Seq8ZA7-5P&index=4
-    cv2.destroyAllWindows()
+    # cv2.waitKey(200000)
+    # cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

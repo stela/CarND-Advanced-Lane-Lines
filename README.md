@@ -18,7 +18,7 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [undistorted_test1]: ./output_images/test1_undistorted.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
+[threshold_image]: ./output_images/test1_thresholds.jpg "Thresholding Example"
 [image4]: ./examples/warped_straight_lines.jpg "Warp Example"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
@@ -67,9 +67,11 @@ For each video frame the process is similar, to correcting a calibration image, 
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image. Color thresholding was done on on the S channel of the HLS color space. Gradient thresholding was done on the L channel, using the Sobel operator to detect vertical lines. You can find the algorith in the function [threshold_pipeline()](lanelines.py#L91). The red areas are by color thresholding, the green is by gradient thresholding. As you can see in the example output they complement each other for detection of lane lines.
 
-![alt text][image3]
+Here's an example of my output for this step, using the previous undistorted image as input:
+
+![color and gradient thresholding][threshold_image]
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
