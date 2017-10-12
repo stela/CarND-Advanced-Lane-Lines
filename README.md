@@ -108,7 +108,14 @@ Below is an example of a curve (test_images_test5.jpg) where the windows are vis
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+The radius of curvature was calculated in the function [radius_of_curvature()](lanelines.py#L249) based on the polynomials identified earlier. The radii is calculated as
+```python
+left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+```
+The pixel-measurements are scaled with an y factor of 30/720 and an x factor of 3.7/700, which gave me radii of 388 m and 562 m, when the correct radius should have been around 1000m. Close enough I think ;-)
+
+The offset from the center of the lane was calculated in the function [sideways_offset_lane_center()](lanelines.py#L249) by averaging the x-coordinates of the left and right lane lines, calculating its offset from the center and multiplying it by the x-meter-per-pixel scaling factor.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
