@@ -215,6 +215,7 @@ def find_lane_lines(binary_warped):
 
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+    # out_img can be displayed for debugging/visualization purposes
     return out_img, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers
 
 

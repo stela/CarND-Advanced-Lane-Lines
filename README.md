@@ -20,7 +20,7 @@ The goals / steps of this project are the following:
 [undistorted_test1]: ./output_images/test1_undistorted.jpg "Road Transformed"
 [threshold_image]: ./output_images/test1_thresholds.jpg "Thresholding Example"
 [straight_lines1_warped]: ./output_images/straight_lines1_warped.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
+[warped_annotated_curve]: ./output_images/curve_warped_annotated.jpg "Annotated warped curve"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
 
@@ -95,11 +95,16 @@ I verified that my perspective transform was working as expected by comparing th
 
 ![warped image][straight_lines1_warped]
 
+
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+The lane-line pixels are identified in [find_lane_lines()](lanelines.py#L130). To get a rough estimate of where the left and right lane lines are located, first for the bottom two quadrants of the image, the x-locations with the max intensities are located. Then by stepping through "windows" (vertical slices of the image) where enough potential lane-line pixels are found, the mean location of those lane line pixels are used as the lane line position if there was a match. This is repeated for all the windows, searching only in the neighbourhood of the previous window identified to improve performance and accuracy.
 
-![alt text][image5]
+At the end of the [find_lane_lines()](lanelines.py#L205) function, second-order polynomials are determined for the left and right lane lines.
+
+Below is an example of a curve (test_images_test5.jpg) where the windows are visible and polynomials are plotted.
+
+![warped annotated curve][warped_annotated_curve]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
