@@ -1,3 +1,5 @@
+![Animated GIF result video][animated_result]
+
 ## Writeup
 
 ---
@@ -22,6 +24,7 @@ The goals / steps of this project are the following:
 [straight_lines1_warped]: ./output_images/straight_lines1_warped.jpg "Warp Example"
 [warped_annotated_curve]: ./output_images/curve_warped_annotated.jpg "Annotated warped curve"
 [curve_result]: ./output_images/curve_result.jpg "Curve result output example"
+[animated_result]: ./output_images/project_video_out.gif "Animated GIF result video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 
