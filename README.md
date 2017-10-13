@@ -22,7 +22,6 @@ The goals / steps of this project are the following:
 [straight_lines1_warped]: ./output_images/straight_lines1_warped.jpg "Warp Example"
 [warped_annotated_curve]: ./output_images/curve_warped_annotated.jpg "Annotated warped curve"
 [curve_result]: ./output_images/curve_result.jpg "Curve result output example"
-[video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 
@@ -129,7 +128,7 @@ I implemented this step in the function [process_image()](lanelines.py#L316). He
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./output_images/project_video_out.mp4)
 
 ---
 
