@@ -21,7 +21,7 @@ The goals / steps of this project are the following:
 [threshold_image]: ./output_images/test1_thresholds.jpg "Thresholding Example"
 [straight_lines1_warped]: ./output_images/straight_lines1_warped.jpg "Warp Example"
 [warped_annotated_curve]: ./output_images/curve_warped_annotated.jpg "Annotated warped curve"
-[image6]: ./examples/example_output.jpg "Output"
+[curve_result]: ./output_images/curve_result.jpg "Curve result output example"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -115,13 +115,13 @@ right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**
 ```
 The pixel-measurements are scaled with an y factor of 30/720 and an x factor of 3.7/700, which gave me radii of 388 m and 562 m, when the correct radius should have been around 1000m. Close enough I think ;-)
 
-The offset from the center of the lane was calculated in the function [sideways_offset_lane_center()](lanelines.py#L249) by averaging the x-coordinates of the left and right lane lines at the bottom of the image, calculating its offset from the center and multiplying it by the x-meter-per-pixel scaling factor.
+The offset from the center of the lane was calculated in the function [sideways_offset_lane_center()](lanelines.py#L249) by averaging the x-coordinates of the left and right lane lines at the bottom of the image, calculating that point's offset from the center and multiplying it by the x-meter-per-pixel scaling factor.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step in the function [process_image()](lanelines.py#L316). Here is an example of my result on a test image:
 
-![alt text][image6]
+![Final result example][curve_result]
 
 ---
 

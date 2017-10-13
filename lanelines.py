@@ -311,14 +311,11 @@ def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Mi
     result = cv2.addWeighted(original_img, 1, newwarp, 0.3, 0)
     return result
 
+
+# Process each video frame
 def process_image(original_img, mtx, dist):
     undistorted_img = undistort_image(original_img, mtx, dist)
-    #img = cv2.imread("test_images/straight_lines1.jpg")
     color_binary, combined_binary = threshold_pipeline(undistorted_img)
-
-    #cv2.imshow("bluegreen-thresholds", color_binary)
-    #cv2.imshow("combined-thresholds", combined_binary)
-    #cv2.waitKey(20000)
 
     height, width = undistorted_img.shape[:2]
     # Origin is top left corner, y increases downwards
@@ -329,18 +326,15 @@ def process_image(original_img, mtx, dist):
     #    binary_warped = dashboard_to_overhead(color_binary, src, dst)
     M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
-    # Find the left and right lane lines and their parameters
-    #    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy = find_lane_lines(binary_warped)
-
-    # Mark left/right lines with colors, calculate left/right fit polynomials
+    # Find the left and right lane lines and their parameters, calculate left/right fit polynomials
     out_img, ploty, left_fitx, right_fitx, left_lane_center, right_lane_center = \
         find_lane_lines(binary_warped)
-    #       visualize_lane_lines(out_img, binary_warped, left_fit, right_fit, nonzerox, nonzeroy, left_lane_inds, right_lane_inds)
 
+    # Road radius and car's sideways offset
     left_curverad, right_curverad = radius_of_curvature(ploty, left_fitx, right_fitx)
     meters_sideways_offset = sideways_offset_lane_center(binary_warped.shape[1], left_lane_center, right_lane_center)
-    #print("left radius: {} right radius: {} offset: {}".format(left_curverad, right_curverad, meters_sideways_offset))
 
+    # Overlay original image with mask of area between lane lines, print radius and sideways offset
     Minv = np.linalg.inv(M)
     original_img_overlaid = project_onto_original(original_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -350,36 +344,21 @@ def process_image(original_img, mtx, dist):
 
     return original_img_overlaid
 
+# For each video, process each frame and output the resulting video
 def process_video(input, output, process_image_fun):
     clip = VideoFileClip(input)
     vid_clip = clip.fl_image(process_image_fun)
     vid_clip.write_videofile(output, audio=False)
     return
 
+
+# Main, process the 3 videos
 def lanelines_main():
     dist, mtx = calibration_params()
-    # print("Calibration parameters: \nmtx={}, \ndist={}".format(mtx, dist))
-
-
-    # TODO threshold image by combining sobel ops + color space conversion
-    # original_img = cv2.imread("test_images/straight_lines1.jpg")
-    original_img = cv2.imread("test_images/test2.jpg")
-    original_img_overlay = process_image(original_img, mtx, dist)
-
-
-    # cv2.imshow("undistorted", undistorted_img)
-    # cv2.imshow("bluegreen-thresholds", color_binary)
-    # cv2.imshow("overhead", binary_warped)
-    # cv2.imshow("out_img", out_img)
-    # cv2.imshow("overlayed", original_img_overlay)
-
     part_process_image = partial(process_image, mtx=mtx, dist=dist)
     process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
     process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
     process_video('harder_challenge_video.mp4', 'output_images/harder_challenge_video_out.mp4', part_process_image)
-
-    # cv2.waitKey(200000)
-    # cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

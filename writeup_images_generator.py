@@ -15,6 +15,7 @@ undistorted_test1_f_name = 'output_images/test1_undistorted.jpg'
 color_binary_f_name = 'output_images/test1_thresholds.jpg'
 warped_f_name = 'output_images/straight_lines1_warped.jpg'
 curve_warped_annotated_f_name = 'output_images/curve_warped_annotated.jpg'
+curve_result_f_name = 'output_images/curve_result.jpg'
 
 def main():
     # Create undistorted version of distorted calibration image and test_images/test1.jpg
@@ -48,12 +49,9 @@ def main():
     curve_annotated_image = process_image_to_annotaded_overhead(curve_image, mtx, dist)
     cv2.imwrite(curve_warped_annotated_f_name, curve_annotated_image)
 
-
-
-    #cv2.imshow("bluegreen-thresholds", color_binary)
-    #cv2.imshow("combined-thresholds", combined_binary)
-    #cv2.imshow("undistorted_test1_image", undistorted_test1_image)
-    #cv2.waitKey(20000)
+    # Generate final video frame using one of the sample images
+    curve_result_img = ll.process_image(curve_image, mtx, dist)
+    cv2.imwrite(curve_result_f_name, curve_result_img)
 
     return
 
