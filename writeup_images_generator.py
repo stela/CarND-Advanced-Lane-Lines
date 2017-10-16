@@ -13,6 +13,7 @@ curve_f_name = 'test_images/test5.jpg'
 undistorted_calibration_f_name = 'output_images/undistorted_calibration.jpg'
 undistorted_test1_f_name = 'output_images/test1_undistorted.jpg'
 color_binary_f_name = 'output_images/test1_thresholds.jpg'
+color_binary_curve_f_name = 'output_images/curve_thresholds.jpg'
 warped_f_name = 'output_images/straight_lines1_warped.jpg'
 curve_warped_annotated_f_name = 'output_images/curve_warped_annotated.jpg'
 curve_result_f_name = 'output_images/curve_result.jpg'
@@ -28,11 +29,19 @@ def main():
     undistorted_test1_image = ll.undistort_image(test1_img, mtx, dist)
     cv2.imwrite(undistorted_test1_f_name, undistorted_test1_image)
 
+    curve_image = cv2.imread(curve_f_name)
+    undistorted_curve_image = ll.undistort_image(curve_image, mtx, dist)
 
-    # Generate combined thresholds of the previous image
+
+    # Generate combined thresholds of the previous images
     color_binary, combined_binary = ll.threshold_pipeline(undistorted_test1_image)
     color_binary = np.multiply(255, color_binary).astype(np.int)
     cv2.imwrite(color_binary_f_name, color_binary)
+
+    color_binary, combined_binary = ll.threshold_pipeline(undistorted_curve_image)
+    color_binary = np.multiply(255, color_binary).astype(np.int)
+    cv2.imwrite(color_binary_curve_f_name, color_binary)
+
 
     # Generate warped image, the straight_lines1.jpg since that one should have vertical lane lines
     straight_lines1_img = cv2.imread(straight_lines1_f_name)
@@ -45,7 +54,6 @@ def main():
     cv2.imwrite(warped_f_name, warped_img)
 
     # Generate warped image with annotated lane lines
-    curve_image = cv2.imread(curve_f_name)
     curve_annotated_image = process_image_to_annotaded_overhead(curve_image, mtx, dist)
     cv2.imwrite(curve_warped_annotated_f_name, curve_annotated_image)
 

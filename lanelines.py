@@ -88,31 +88,41 @@ def undistort_image(img, mtx, dist):
 
 # Originally copied from 30. Color and Gradient
 # assume img in BGR format
-def threshold_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
+def threshold_pipeline(img, sobel_x_thresh=(35, 200), luv_l_thresh=(225, 255), lab_b_thresh=(200, 255)):
     img = np.copy(img)
-    # Convert to HSV color space and separate the V channel
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
-    l_channel = hsv[:,:,1]
-    s_channel = hsv[:,:,2]
-    # Sobel x
-    sobelx = cv2.Sobel(l_channel, cv2.CV_64F, 1, 0) # Take the derivative in x
+    # Tweaked thresholding according to first reviwer's suggestions for improvements:
+    # White is detected well with L of LUV color space [225, 255]
+    # Yellow is detected well with b channel of Lab [155, 255] to [200, 255]
+
+    hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
+    luv = cv2.cvtColor(img, cv2.COLOR_BGR2LUV).astype(np.float)
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float)
+
+    # Self/course: Sobel of HLS's L channel (x-derivative) to detect vertical (lane) lines
+    hls_l_channel = hls[:,:,1]
+    sobelx = cv2.Sobel(hls_l_channel, cv2.CV_64F, 1, 0) # Take the derivative in x
     abs_sobelx = np.absolute(sobelx) # Absolute x derivative to accentuate lines away from horizontal
     scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))
-
-    # Threshold x gradient
+    # Threshold x gradient (green in color_binary)
     sxbinary = np.zeros_like(scaled_sobel)
-    sxbinary[(scaled_sobel >= sx_thresh[0]) & (scaled_sobel <= sx_thresh[1])] = 1
+    sxbinary[(scaled_sobel >= sobel_x_thresh[0]) & (scaled_sobel <= sobel_x_thresh[1])] = 1
 
-    # Threshold color channel
-    s_binary = np.zeros_like(s_channel)
-    s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
-    # Stack each channel
-    # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might
-    # be beneficial to replace this channel with something else.
-    color_binary = np.dstack((np.zeros_like(sxbinary), sxbinary, s_binary))
+    # Thresholding LUV L channel to [225, 255] aimed at white lane lines (red in color_binary)
+    luv_l_channel = luv[:,:,0]
+    luv_l_binary = np.zeros_like(luv_l_channel)
+    luv_l_binary[(luv_l_channel >= luv_l_thresh[0]) & (luv_l_channel <= luv_l_thresh[1])] = 1
+
+    # Thresholding Lab b channel to [155, 200] aimed at yellow lane lines (blue in color_binary)
+    lab_b_channel = lab[:,:,0]
+    lab_b_binary = np.zeros_like(lab_b_channel)
+    lab_b_binary[(lab_b_channel >= lab_b_thresh[0]) & (lab_b_channel <= lab_b_thresh[1])] = 1
+
+    # Stack each channel (output is BGR format)
+    # zero-channel can be inserted with: np.zeros_like(binaryimage)
+    color_binary = np.dstack((lab_b_binary, sxbinary, luv_l_binary))
 
     combined_binary = np.zeros_like(sxbinary)
-    combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
+    combined_binary[(sxbinary == 1) | (luv_l_binary == 1) | (lab_b_binary == 1)] = 1
 
     return color_binary, combined_binary
 
@@ -282,6 +292,11 @@ def sideways_offset_lane_center(width, left_centers, right_centers):
     :rtype: float
     """
     camera_center = width/2
+
+    # in case nothing at all detected, abort to avoid index out of bounds
+    if len(left_centers) == 0 or len(right_centers) == 0:
+        return 0
+
     bottom_left = left_centers[0]
     bottom_right = right_centers[0]
     lanes_center = np.mean([bottom_left, bottom_right])
