@@ -46,10 +46,7 @@ def main():
     # Generate warped image, the straight_lines1.jpg since that one should have vertical lane lines
     straight_lines1_img = cv2.imread(straight_lines1_f_name)
     straight_lines1_img = ll.undistort_image(straight_lines1_img, mtx, dist)
-    # OK, not ideal to copy code, but easiest way...
-    height, width = straight_lines1_img.shape[:2]
-    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
-    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
+    src, dst = ll.transform_src_and_dst(straight_lines1_img)
     M, warped_img = ll.dashboard_to_overhead(straight_lines1_img, src, dst)
     cv2.imwrite(warped_f_name, warped_img)
 
@@ -67,9 +64,7 @@ def main():
 def process_image_to_annotaded_overhead(original_img, mtx, dist):
     undistorted_img = ll.undistort_image(original_img, mtx, dist)
     color_binary, combined_binary = ll.threshold_pipeline(undistorted_img)
-    height, width = undistorted_img.shape[:2]
-    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
-    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
+    src, dst = ll.transform_src_and_dst(undistorted_img)
     M, binary_warped = ll.dashboard_to_overhead(combined_binary, src, dst)
     # Mark left/right lines with colors, calculate left/right fit polynomials
     out_img, ploty, left_fitx, right_fitx, left_lane_center, right_lane_center = \

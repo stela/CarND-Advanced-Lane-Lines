@@ -332,13 +332,9 @@ def process_image(original_img, mtx, dist):
     undistorted_img = undistort_image(original_img, mtx, dist)
     color_binary, combined_binary = threshold_pipeline(undistorted_img)
 
-    height, width = undistorted_img.shape[:2]
-    # Origin is top left corner, y increases downwards
-    # source below goes (too?) far ahead almost to horizon
-    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
-    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
+    src, dst = transform_src_and_dst(undistorted_img)
 
-    #    binary_warped = dashboard_to_overhead(color_binary, src, dst)
+    # M, binary_warped = dashboard_to_overhead(color_binary, src, dst)
     M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
     # Find the left and right lane lines and their parameters, calculate left/right fit polynomials
@@ -358,6 +354,17 @@ def process_image(original_img, mtx, dist):
     cv2.putText(original_img_overlaid,'Right radius: %.1f m' %(right_curverad), (33, 200), font, 1, (255, 255, 255), 2)
 
     return original_img_overlaid
+
+
+# Transformation source and destination
+def transform_src_and_dst(img):
+    height, width = img.shape[:2]
+    # Origin is top left corner, y increases downwards
+    # source below goes (too?) far ahead almost to horizon
+    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
+    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width - 450, height]])
+    return src, dst
+
 
 # For each video, process each frame and output the resulting video
 def process_video(input, output, process_image_fun):
