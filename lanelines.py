@@ -88,7 +88,7 @@ def undistort_image(img, mtx, dist):
 
 # Originally copied from 30. Color and Gradient
 # assume img in BGR format
-def threshold_pipeline(img, sobel_x_thresh=(35, 200), luv_l_thresh=(225, 255), lab_b_thresh=(200, 255)):
+def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255), lab_b_thresh=(200, 255)):
     img = np.copy(img)
     # Tweaked thresholding according to first reviwer's suggestions for improvements:
     # White is detected well with L of LUV color space [225, 255]
@@ -369,8 +369,8 @@ def transform_src_and_dst(img):
     height, width = img.shape[:2]
     # Origin is top left corner, y increases downwards
     # source below goes (too?) far ahead almost to horizon
-    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
-    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width - 450, height]])
+    src = np.float32([[578, 464], [708, 464], [258, 682], [1050, 682]])
+    dst = np.float32([[470, 0], [width - 470, 0], [450, height], [width - 450, height]])
     return src, dst
 
 
