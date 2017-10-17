@@ -328,7 +328,11 @@ def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Mi
 
 
 # Process each video frame
-def process_image(original_img, mtx, dist):
+def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
+    if (conv_rgb_to_bgr):
+        original_img = cv2.cvtColor(original_img, cv2.COLOR_RGB2BGR)
+    # work on the image in BGR space, as if (video) frames were read in using cv2
+
     undistorted_img = undistort_image(original_img, mtx, dist)
     color_binary, combined_binary = threshold_pipeline(undistorted_img)
 
@@ -352,6 +356,10 @@ def process_image(original_img, mtx, dist):
     cv2.putText(original_img_overlaid,'Offset: %f m' %(meters_sideways_offset), (33, 100), font, 1, (255, 255, 255), 2)
     cv2.putText(original_img_overlaid,'Left radius: %.1f m' %(left_curverad), (33, 150), font, 1, (255, 255, 255), 2)
     cv2.putText(original_img_overlaid,'Right radius: %.1f m' %(right_curverad), (33, 200), font, 1, (255, 255, 255), 2)
+
+    if (conv_rgb_to_bgr):
+        original_img_overlaid = cv2.cvtColor(original_img_overlaid, cv2.COLOR_BGR2RGB)
+    # before writing the image back into a video, convert back to RGB format
 
     return original_img_overlaid
 
