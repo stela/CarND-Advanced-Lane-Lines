@@ -88,7 +88,7 @@ def undistort_image(img, mtx, dist):
 
 # Originally copied from 30. Color and Gradient
 # assume img in BGR format
-def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255), lab_b_thresh=(200, 255)):
+def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255), lab_b_thresh=(191, 255)):
     img = np.copy(img)
     # Tweaked thresholding according to first reviwer's suggestions for improvements:
     # White is detected well with L of LUV color space [225, 255]
@@ -307,7 +307,7 @@ def sideways_offset_lane_center(width, left_centers, right_centers):
 
 # Project polynomials onto original image
 # Originally from course materials "36. Tips and Tricks for the Project" but modified
-def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Minv):
+def project_onto_original(undistorted_img, warped, ploty, left_fitx, right_fitx, Minv):
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(warped).astype(np.uint8)
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
@@ -321,9 +321,9 @@ def project_onto_original(original_img, warped, ploty, left_fitx, right_fitx, Mi
     cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
 
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = cv2.warpPerspective(color_warp, Minv, (original_img.shape[1], original_img.shape[0]))
+    newwarp = cv2.warpPerspective(color_warp, Minv, (undistorted_img.shape[1], undistorted_img.shape[0]))
     # Combine the result with the original image
-    result = cv2.addWeighted(original_img, 1, newwarp, 0.3, 0)
+    result = cv2.addWeighted(undistorted_img, 1, newwarp, 0.3, 0)
     return result
 
 
@@ -351,7 +351,7 @@ def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
 
     # Overlay original image with mask of area between lane lines, print radius and sideways offset
     Minv = np.linalg.inv(M)
-    original_img_overlaid = project_onto_original(original_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
+    original_img_overlaid = project_onto_original(undistorted_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(original_img_overlaid,'Offset: %f m' %(meters_sideways_offset), (33, 100), font, 1, (255, 255, 255), 2)
     cv2.putText(original_img_overlaid,'Left radius: %.1f m' %(left_curverad), (33, 150), font, 1, (255, 255, 255), 2)
