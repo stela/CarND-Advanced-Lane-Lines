@@ -12,6 +12,12 @@ debug = False
 
 calibration_f_names = glob.glob('camera_cal/calibration*.jpg')
 
+######
+# Context state for find_lane_lines()
+# Number of sliding windows chosen
+nwindows = 9
+
+
 # Initially copied from course materials, "9. Finding Corners"
 def draw_corners(fname):
     img = cv2.imread(fname)
@@ -148,11 +154,10 @@ def find_lane_lines(binary_warped):
     # These will be the starting point for the left and right lines
     midpoint = np.int(histogram.shape[0]/2)
     quarter_point = np.int(midpoint/2)
+    # Initial left/right window positions based on average across bottom half of the image, not just bottom-most part
     leftx_base = np.argmax(histogram[quarter_point:midpoint]) + quarter_point
     rightx_base = np.argmax(histogram[midpoint:midpoint+quarter_point]) + midpoint
 
-    # Choose the number of sliding windows
-    nwindows = 9
     # Set height of windows
     window_height = np.int(binary_warped.shape[0]/nwindows)
     # Identify the x and y positions of all nonzero pixels in the image
@@ -167,6 +172,7 @@ def find_lane_lines(binary_warped):
     # Set minimum number of pixels found to recenter window
     minpix = 40
     # Create empty lists to receive left and right lane pixel indices
+    # TODO move inds and/or centers to globals
     left_lane_inds = []
     right_lane_inds = []
     left_lane_centers = []
@@ -187,10 +193,11 @@ def find_lane_lines(binary_warped):
         cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),(0,255,0), 2)
 
         # Identify the nonzero pixels in x and y within the window
+        # good_{left,right}_inds are indexes of nonzero pixels inside the window, of the binary_warped.nonzero() collection
         good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-                          (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
+                          (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
         good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
-                           (nonzerox >= win_xright_low) &  (nonzerox < win_xright_high)).nonzero()[0]
+                           (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
         # Append these indices to the lists
         left_lane_inds.append(good_left_inds)
         right_lane_inds.append(good_right_inds)
@@ -216,7 +223,7 @@ def find_lane_lines(binary_warped):
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
-    # Generate x and y values for plotting
+    # Generate x and y values for plotting. ploty is just a range from 0 to height of binary_warped
     ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
