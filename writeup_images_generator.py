@@ -89,6 +89,7 @@ def main():
 
 # Keep this method in sync with lanelines.process_image(), except for RGB/BGR mixup
 def process_image_to_annotaded_overhead(original_img, mtx, dist, conv_rgb_to_bgr=False):
+    lane_finder = ll.LaneFinder()
     if (conv_rgb_to_bgr):
         original_img = cv2.cvtColor(original_img, cv2.COLOR_RGB2BGR)
 
@@ -98,7 +99,7 @@ def process_image_to_annotaded_overhead(original_img, mtx, dist, conv_rgb_to_bgr
     M, binary_warped = ll.dashboard_to_overhead(combined_binary, src, dst)
     # Mark left/right lines with colors, calculate left/right fit polynomials
     out_img, ploty, left_fitx, right_fitx, left_lane_center, right_lane_center = \
-        ll.find_lane_lines(binary_warped)
+        lane_finder.find_lane_lines(binary_warped)
 
     if (conv_rgb_to_bgr):
         out_img = cv2.cvtColor(out_img, cv2.COLOR_BGR2RGB)
