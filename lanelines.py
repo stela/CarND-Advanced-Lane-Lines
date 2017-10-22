@@ -229,6 +229,7 @@ class LaneFinder:
 
         # Concatenate the arrays of indices
         # TODO Only overwrite left/right_lane_inds in case there's enough data to determine a polyline reliably. Also per-window handling?
+        # TODO Frame @38s has right lane severely broken, hopefully above fixes that
         self.left_lane_inds = np.concatenate(left_lane_inds)
         self.right_lane_inds = np.concatenate(right_lane_inds)
 
