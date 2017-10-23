@@ -89,19 +89,22 @@ def undistort_image(img, mtx, dist):
 
 # Originally copied from 30. Color and Gradient
 # assume img in BGR format
-def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255), lab_b_thresh=(191, 255)):
+def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255),
+                       lab_l_thresh=(185, 255), lab_b_thresh=(146, 255)):
     img = np.copy(img)
     # Tweaked thresholding according to first reviwer's suggestions for improvements:
     # White is detected well with L of LUV color space [225, 255]
     # Yellow is detected well with b channel of Lab [155, 255] to [200, 255]
 
+    # Original: luv_l_thresh=(225, 255), lab_b_thresh=(191, 255)
+
     # Trial-and-error to detect yellow using LAB color space: 123=LAB
-    # lower_yellow_1 = 197
-    # lower_yellow_2 = 1
-    # lower_yellow_3 = 146
-    # upper_yellow_1 = 359
-    # upper_yellow_2 = 359
-    # upper_yellow_3 = 359
+    # lower_yellow_L = 197
+    # lower_yellow_A = 1
+    # lower_yellow_B = 146
+    # upper_yellow_L = 359
+    # upper_yellow_A = 359
+    # upper_yellow_B = 359
 
     # Trial-and-error to detect white using LUV color space: 123=LUV
     # LUV color space, 123=LUV
@@ -131,16 +134,20 @@ def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255), l
     luv_l_binary[(luv_l_channel >= luv_l_thresh[0]) & (luv_l_channel <= luv_l_thresh[1])] = 1
 
     # Thresholding Lab b channel to [155, 200] aimed at yellow lane lines (blue in color_binary)
-    lab_b_channel = lab[:,:,0]
-    lab_b_binary = np.zeros_like(lab_b_channel)
-    lab_b_binary[(lab_b_channel >= lab_b_thresh[0]) & (lab_b_channel <= lab_b_thresh[1])] = 1
+    lab_l_channel = lab[:,:,0]
+    lab_b_channel = lab[:,:,2]
+    lab_binary = np.zeros_like(lab_b_channel)
+    lab_binary[(lab_l_channel >= lab_l_thresh[0]) & (lab_l_channel <= lab_l_thresh[1])
+               &
+               (lab_b_channel >= lab_b_thresh[0]) & (lab_b_channel <= lab_b_thresh[1])
+                ] = 1
 
     # Stack each channel (output is BGR format)
     # zero-channel can be inserted with: np.zeros_like(binaryimage)
-    color_binary = np.dstack((lab_b_binary, sxbinary, luv_l_binary))
+    color_binary = np.dstack((lab_binary, sxbinary, luv_l_binary))
 
     combined_binary = np.zeros_like(sxbinary)
-    combined_binary[(sxbinary == 1) | (luv_l_binary == 1) | (lab_b_binary == 1)] = 1
+    combined_binary[(sxbinary == 1) | (luv_l_binary == 1) | (lab_binary == 1)] = 1
 
     return color_binary, combined_binary
 
@@ -203,7 +210,7 @@ class LaneFinder:
             rightx_current = self.right_lane_centers[0]
 
         # Set the width of the windows +/- margin
-        margin = 80
+        margin = 50
         # Set minimum number of pixels found to recenter window
         minpix = 40
         # Create empty lists to receive left and right lane pixel indices
@@ -429,7 +436,8 @@ def transform_src_and_dst(img):
 # For each video, process each frame and output the resulting video
 def process_video(input, output, process_image_fun):
     clip = VideoFileClip(input)
-    # clip = clip.subclip(*subclip_secs)
+    # Uncomment to generate small quick range, range in seconds (start, end)
+    #clip = clip.subclip(35, 45)
     vid_clip = clip.fl_image(process_image_fun)
     vid_clip.write_videofile(output, audio=False)
     return
