@@ -96,24 +96,14 @@ def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255),
     # White is detected well with L of LUV color space [225, 255]
     # Yellow is detected well with b channel of Lab [155, 255] to [200, 255]
 
-    # Original: luv_l_thresh=(225, 255), lab_b_thresh=(191, 255)
+    # Then did some own experimentation and found these values to be better (use both L and B of LAB)
+    # yellow_L = 185 -
+    # yellow_A = 0 -
+    # yellow_B = 146 -
 
-    # Trial-and-error to detect yellow using LAB color space: 123=LAB
-    # lower_yellow_L = 197
-    # lower_yellow_A = 1
-    # lower_yellow_B = 146
-    # upper_yellow_L = 359
-    # upper_yellow_A = 359
-    # upper_yellow_B = 359
-
-    # Trial-and-error to detect white using LUV color space: 123=LUV
-    # LUV color space, 123=LUV
-    # lower_white_1 = 215
-    # lower_white_2 = 0
-    # lower_white_3 = 0
-    # upper_white_1 = 359
-    # upper_white_2 = 359
-    # upper_white_3 = 359
+    # white_L = 215 or 225 -
+    # white_U = 0 -
+    # white_V = 0 -
 
     hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
     luv = cv2.cvtColor(img, cv2.COLOR_BGR2LUV).astype(np.float)
