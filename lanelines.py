@@ -95,6 +95,23 @@ def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255), l
     # White is detected well with L of LUV color space [225, 255]
     # Yellow is detected well with b channel of Lab [155, 255] to [200, 255]
 
+    # Trial-and-error to detect yellow using LAB color space: 123=LAB
+    # lower_yellow_1 = 197
+    # lower_yellow_2 = 1
+    # lower_yellow_3 = 146
+    # upper_yellow_1 = 359
+    # upper_yellow_2 = 359
+    # upper_yellow_3 = 359
+
+    # Trial-and-error to detect white using LUV color space: 123=LUV
+    # LUV color space, 123=LUV
+    # lower_white_1 = 215
+    # lower_white_2 = 0
+    # lower_white_3 = 0
+    # upper_white_1 = 359
+    # upper_white_2 = 359
+    # upper_white_3 = 359
+
     hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS).astype(np.float)
     luv = cv2.cvtColor(img, cv2.COLOR_BGR2LUV).astype(np.float)
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float)
@@ -369,7 +386,7 @@ def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True, lane_finder = L
     M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
     # Find the left and right lane lines and their parameters, calculate left/right fit polynomials
-    out_img, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers = \
+    out_img_annotated, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers = \
         lane_finder.find_lane_lines(binary_warped)
 
     # Road radius and car's sideways offset
@@ -384,9 +401,17 @@ def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True, lane_finder = L
     cv2.putText(original_img_overlaid,'Left radius: %.1f m' %(left_curverad), (33, 150), font, 1, (255, 255, 255), 2)
     cv2.putText(original_img_overlaid,'Right radius: %.1f m' %(right_curverad), (33, 200), font, 1, (255, 255, 255), 2)
 
+    # use the out_img_annotated for debugging, halve its size and put it top right
+    half_width = original_img_overlaid.shape[1] // 2
+    width = original_img_overlaid.shape[1]
+    half_height = original_img_overlaid.shape[0] // 2
+    original_img_overlaid[0:half_height, half_width:width, :] = \
+        cv2.resize(out_img_annotated, (half_width, half_height))
+
+
+    # before writing the image back into a video, convert back to RGB format
     if (conv_rgb_to_bgr):
         original_img_overlaid = cv2.cvtColor(original_img_overlaid, cv2.COLOR_BGR2RGB)
-    # before writing the image back into a video, convert back to RGB format
 
     return original_img_overlaid
 
@@ -404,6 +429,7 @@ def transform_src_and_dst(img):
 # For each video, process each frame and output the resulting video
 def process_video(input, output, process_image_fun):
     clip = VideoFileClip(input)
+    # clip = clip.subclip(*subclip_secs)
     vid_clip = clip.fl_image(process_image_fun)
     vid_clip.write_videofile(output, audio=False)
     return
