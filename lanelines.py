@@ -138,9 +138,7 @@ def threshold_pipeline(img, sobel_x_thresh=(45, 200), luv_l_thresh=(225, 255),
     lab_b_channel = lab[:,:,2]
     lab_binary = np.zeros_like(lab_b_channel)
     lab_binary[(lab_l_channel >= lab_l_thresh[0]) & (lab_l_channel <= lab_l_thresh[1])
-               &
-               (lab_b_channel >= lab_b_thresh[0]) & (lab_b_channel <= lab_b_thresh[1])
-                ] = 1
+               & (lab_b_channel >= lab_b_thresh[0]) & (lab_b_channel <= lab_b_thresh[1])] = 1
 
     # Stack each channel (output is BGR format)
     # zero-channel can be inserted with: np.zeros_like(binaryimage)
