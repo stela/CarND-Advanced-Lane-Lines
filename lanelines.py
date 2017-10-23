@@ -192,8 +192,6 @@ class LaneFinder:
         # Create empty lists to receive left and right lane pixel indices
 
         self.ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
-        left_lane_inds = []
-        right_lane_inds = []
 
         # Step through the windows one by one
         for window in range(self.nwindows):
@@ -209,35 +207,38 @@ class LaneFinder:
             cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),(0,255,0), 2)
             cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),(0,255,0), 2)
 
-            # Identify the nonzero pixels in x and y within the window
+            # Identify the nonzero pixels in x and y within the current window
             # good_{left,right}_inds are indexes of nonzero pixels inside the current window
-            # of the binary_warped.nonzero() collection
+            # of the nonzero=binary_warped.nonzero() collection
             good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
                               (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
             good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
                                (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
             # Append these indices to the lists
-            left_lane_inds.append(good_left_inds)
-            right_lane_inds.append(good_right_inds)
             # If you found > minpix pixels, recenter next window on their mean position
             if len(good_left_inds) > minpix:
                 leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
                 self.left_lane_centers[window] = leftx_current
+                self.left_lane_inds[window] = good_left_inds
+            else:
+                self.left_lane_inds[window] = np.zeros(0, dtype=int)
             if len(good_right_inds) > minpix:
                 rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
                 self.right_lane_centers[window] = rightx_current
+                self.right_lane_inds[window] = good_right_inds
+            else:
+                self.right_lane_inds[window] = np.zeros(0, dtype=int)
 
         # Concatenate the arrays of indices
-        # TODO Only overwrite left/right_lane_inds in case there's enough data to determine a polyline reliably. Also per-window handling?
-        # TODO Frame @38s has right lane severely broken, hopefully above fixes that
-        self.left_lane_inds = np.concatenate(left_lane_inds)
-        self.right_lane_inds = np.concatenate(right_lane_inds)
+        # TODO Frame @38s has right lane line broken, still needs improvement
+        left_lane_inds = np.concatenate(self.left_lane_inds)
+        right_lane_inds = np.concatenate(self.right_lane_inds)
 
         # Extract left and right line pixel positions
-        leftx = nonzerox[self.left_lane_inds]
-        lefty = nonzeroy[self.left_lane_inds]
-        rightx = nonzerox[self.right_lane_inds]
-        righty = nonzeroy[self.right_lane_inds]
+        leftx = nonzerox[left_lane_inds]
+        lefty = nonzeroy[left_lane_inds]
+        rightx = nonzerox[right_lane_inds]
+        righty = nonzeroy[right_lane_inds]
 
         # Fit a second order polynomial to each
         left_fit = np.polyfit(lefty, leftx, 2)
@@ -249,8 +250,8 @@ class LaneFinder:
 
         out_img = self.draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, self.ploty)
 
-        out_img[nonzeroy[self.left_lane_inds], nonzerox[self.left_lane_inds]] = [255, 0, 0]
-        out_img[nonzeroy[self.right_lane_inds], nonzerox[self.right_lane_inds]] = [0, 0, 255]
+        out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+        out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
         # out_img can be displayed for debugging/visualization purposes
         return out_img, self.ploty, left_fitx, right_fitx, self.left_lane_centers, self.right_lane_centers
 
