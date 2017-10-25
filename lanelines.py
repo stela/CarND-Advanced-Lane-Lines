@@ -153,8 +153,17 @@ def dashboard_to_overhead(img, src, dst):
     return M, warped
 
 
+class LaneLines:
+    def __init__(self, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers):
+        self.ploty = ploty
+        self.left_fitx = left_fitx
+        self.right_fitx = right_fitx
+        self.left_lane_centers = left_lane_centers
+        self.right_lane_centers = right_lane_centers
+
+
 # Originally from "33. Finding the Lines"
-def find_lane_lines(binary_warped):
+def find_lane_lines(binary_warped, previous_lane_lines):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
     bottom_half_y = np.int(binary_warped.shape[0]/2)
@@ -226,10 +235,14 @@ def find_lane_lines(binary_warped):
 
     # If nothing detected, quick-and-dirty bogus response
     # Ideally info from previous frames should be used instead
+    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     if len(left_lane_inds) == 0 or len(right_lane_inds) == 0:
-        left_fitx = np.zeros(len(self.ploty))
-        right_fitx = np.zeros(len(self.ploty))
-        return out_img, self.ploty, left_fitx, right_fitx, self.left_lane_centers, self.right_lane_centers
+        if previous_lane_lines is None:
+            left_fitx = np.full(len(ploty), midpoint - 175)
+            right_fitx = np.full(len(ploty), midpoint + 175)
+            return out_img, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers
+        else:
+            return out_img, previous_lane_lines
 
     # Extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
@@ -242,7 +255,6 @@ def find_lane_lines(binary_warped):
     right_fit = np.polyfit(righty, rightx, 2)
 
     # Generate x and y values for plotting. ploty is just a range from 0 to height of binary_warped
-    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
@@ -251,7 +263,7 @@ def find_lane_lines(binary_warped):
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
     # out_img can be displayed for debugging/visualization purposes
-    return out_img, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers
+    return out_img, LaneLines(ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers)
 
 
 # From "33. Finding the Lines - Visualization" with modifications
@@ -351,6 +363,9 @@ def project_onto_original(undistorted_img, warped, ploty, left_fitx, right_fitx,
     return result
 
 
+last_lane_lines = None
+
+
 # Process each video frame
 def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
     if (conv_rgb_to_bgr):
@@ -366,16 +381,20 @@ def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
     M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
     # Find the left and right lane lines and their parameters, calculate left/right fit polynomials
-    out_img_annotated, ploty, left_fitx, right_fitx, left_lane_centers, right_lane_centers = \
-        find_lane_lines(binary_warped)
+    out_img_annotated, lane_lines = \
+        find_lane_lines(binary_warped, last_lane_lines)
+    __name__.last_lane_lines = lane_lines
 
     # Road radius and car's sideways offset
-    left_curverad, right_curverad = radius_of_curvature(ploty, left_fitx, right_fitx)
-    meters_sideways_offset = sideways_offset_lane_center(binary_warped.shape[1], left_lane_centers, right_lane_centers)
+    left_curverad, right_curverad = radius_of_curvature(lane_lines.ploty, lane_lines.left_fitx, lane_lines.right_fitx)
+    meters_sideways_offset = \
+        sideways_offset_lane_center(binary_warped.shape[1], lane_lines.left_lane_centers, lane_lines.right_lane_centers)
 
     # Overlay original image with mask of area between lane lines, print radius and sideways offset
     Minv = np.linalg.inv(M)
-    original_img_overlaid = project_onto_original(undistorted_img, binary_warped, ploty, left_fitx, right_fitx, Minv)
+    original_img_overlaid =\
+        project_onto_original(undistorted_img, binary_warped,
+                              lane_lines.ploty, lane_lines.left_fitx, lane_lines.right_fitx, Minv)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cv2.putText(original_img_overlaid,'Offset: %f m' %(meters_sideways_offset), (33, 100), font, 1, (255, 255, 255), 2)
     cv2.putText(original_img_overlaid,'Left radius: %.1f m' %(left_curverad), (33, 150), font, 1, (255, 255, 255), 2)

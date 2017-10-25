@@ -94,7 +94,7 @@ def process_image_to_annotaded_overhead(original_img, mtx, dist, conv_rgb_to_bgr
     src, dst = ll.transform_src_and_dst(undistorted_img)
     M, binary_warped = ll.dashboard_to_overhead(combined_binary, src, dst)
     # Mark left/right lines with colors, calculate left/right fit polynomials
-    out_img, ploty, left_fitx, right_fitx, left_lane_center, right_lane_center = \
+    out_img, lane_lines = \
         ll.find_lane_lines(binary_warped)
 
     if conv_rgb_to_bgr:
