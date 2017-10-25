@@ -9,6 +9,7 @@ test1_f_name = 'test_images/test1.jpg'
 straight_lines1_f_name = 'test_images/straight_lines1.jpg'
 curve_f_name = 'test_images/test5.jpg'
 dirty_f_name = 'test_images/dirty_border_noise.png'
+few_lane_pixels_f_name = 'test_images/few_lane_pixels.png'
 
 # Outputs, should all go into output_images directory
 undistorted_calibration_f_name = 'output_images/undistorted_calibration.jpg'
@@ -22,6 +23,7 @@ curve_warped_annotated_f_name = 'output_images/curve_warped_annotated.jpg'
 dirty_warped_annotated_f_name = 'output_images/dirty_border_noise_annotated.jpg'
 curve_result_f_name = 'output_images/curve_result.jpg'
 dirty_result_f_name = 'output_images/dirty_border_noise_result.jpg'
+few_lane_pixels_result_f_name = 'output_images/few_lane_pixels_result.jpg'
 
 
 def main():
@@ -43,6 +45,9 @@ def main():
 
     straight_lines1_img = cv2.imread(straight_lines1_f_name)
     undistorted_straight_lines1_image = ll.undistort_image(straight_lines1_img, mtx, dist)
+
+    few_lane_pixels_img = cv2.imread(few_lane_pixels_f_name)
+    undistorted_few_lane_pixels_img = ll.undistort_image(few_lane_pixels_img, mtx, dist)
 
     # Generate combined thresholds of the previous images
     color_binary, combined_binary = ll.threshold_pipeline(undistorted_test1_image)
@@ -74,6 +79,9 @@ def main():
     dirty_annotated_image = process_image_to_annotaded_overhead(dirty_image, mtx, dist)
     cv2.imwrite(dirty_warped_annotated_f_name, dirty_annotated_image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
+    few_lane_pixels_annotated_image = process_image_to_annotaded_overhead(few_lane_pixels_img, mtx, dist)
+    cv2.imwrite(few_lane_pixels_result_f_name, few_lane_pixels_annotated_image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+
     # Generate final video frames using sample images
     curve_result_img = ll.process_image(curve_image, mtx, dist, False)
     cv2.imwrite(curve_result_f_name, curve_result_img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
@@ -95,7 +103,7 @@ def process_image_to_annotaded_overhead(original_img, mtx, dist, conv_rgb_to_bgr
     M, binary_warped = ll.dashboard_to_overhead(combined_binary, src, dst)
     # Mark left/right lines with colors, calculate left/right fit polynomials
     out_img, lane_lines = \
-        ll.find_lane_lines(binary_warped)
+        ll.find_lane_lines(binary_warped, None)
 
     if conv_rgb_to_bgr:
         out_img = cv2.cvtColor(out_img, cv2.COLOR_BGR2RGB)

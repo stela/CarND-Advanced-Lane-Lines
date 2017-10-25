@@ -31,7 +31,7 @@ def draw_corners(fname):
     if ret:
         # Draw and display the corners
         img = cv2.drawChessboardCorners(img, (nx, ny), corners, ret)
-        if (debug):
+        if debug:
             cv2.imshow('cornerimg', img)
             cv2.waitKey(500)
         return img
@@ -254,6 +254,14 @@ def find_lane_lines(binary_warped, previous_lane_lines):
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
+    # A "normally curvy" lane line will have:
+    # |left/right_fit[2]| < 1000
+    # |left/right_fit[1]| < 1 and
+    # |left/right_fit[0]| < 0.001
+    if abs(left_fit[2]) > 1000 or abs(left_fit[1]) > 1 or abs(left_fit[0]) > 0.1 or \
+            abs(right_fit[2]) > 1000 or abs(right_fit[1]) > 1 or abs(right_fit[0]) > 0.1:
+        return out_img, previous_lane_lines
+
     # Generate x and y values for plotting. ploty is just a range from 0 to height of binary_warped
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
@@ -368,7 +376,7 @@ last_lane_lines = None
 
 # Process each video frame
 def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
-    if (conv_rgb_to_bgr):
+    if conv_rgb_to_bgr:
         original_img = cv2.cvtColor(original_img, cv2.COLOR_RGB2BGR)
     # work on the image in BGR space, as if (video) frames were read in using cv2
 
@@ -381,9 +389,10 @@ def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
     M, binary_warped = dashboard_to_overhead(combined_binary, src, dst)
 
     # Find the left and right lane lines and their parameters, calculate left/right fit polynomials
+    global last_lane_lines
     out_img_annotated, lane_lines = \
         find_lane_lines(binary_warped, last_lane_lines)
-    __name__.last_lane_lines = lane_lines
+    last_lane_lines = lane_lines
 
     # Road radius and car's sideways offset
     left_curverad, right_curverad = radius_of_curvature(lane_lines.ploty, lane_lines.left_fitx, lane_lines.right_fitx)
@@ -428,7 +437,7 @@ def transform_src_and_dst(img):
 def process_video(input, output, process_image_fun):
     clip = VideoFileClip(input)
     # Uncomment to generate small quick range, range in seconds (start, end)
-    # clip = clip.subclip(23, 25)
+    # clip = clip.subclip(38, 41)
     vid_clip = clip.fl_image(process_image_fun)
     vid_clip.write_videofile(output, audio=False)
     return
