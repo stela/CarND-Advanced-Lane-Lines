@@ -1,3 +1,4 @@
 .idea
 ImageToolUi.py
 *.iml
+.DS_Store
