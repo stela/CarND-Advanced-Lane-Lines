@@ -161,8 +161,12 @@ class LaneFinder:
     left_lane_centers = np.zeros(nwindows, dtype=int)
     right_lane_centers = np.zeros(nwindows, dtype=int)
 
-    #def __init__(self):
+    left_nonzerox_by_window = np.empty(nwindows, dtype=list)
+    left_nonzeroy_by_window = np.empty(nwindows, dtype=list)
+    right_nonzerox_by_window = np.empty(nwindows, dtype=list)
+    right_nonzeroy_by_window = np.empty(nwindows, dtype=list)
 
+    #def __init__(self):
 
     # Originally from "33. Finding the Lines"
     def find_lane_lines(self, binary_warped):
@@ -227,37 +231,44 @@ class LaneFinder:
             good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
                                (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
             # Append these indices to the lists
-            # If you found > minpix pixels, recenter next window on their mean position
-            if len(good_left_inds) > minpix:
+            # If you found > minpix pixels, recenter next window on their mean position and save per-window state
+            if len(good_left_inds) > minpix or self.left_lane_inds[window] is None:
                 leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
                 self.left_lane_centers[window] = leftx_current
                 self.left_lane_inds[window] = good_left_inds
-            else:
-                self.left_lane_inds[window] = np.zeros(0, dtype=int)
-            if len(good_right_inds) > minpix:
+                self.left_nonzerox_by_window = nonzerox
+                self.left_nonzeroy_by_window = nonzeroy
+            if len(good_right_inds) > minpix or self.right_lane_inds[window] is None:
                 rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
                 self.right_lane_centers[window] = rightx_current
                 self.right_lane_inds[window] = good_right_inds
-            else:
-                self.right_lane_inds[window] = np.zeros(0, dtype=int)
+                self.right_nonzerox_by_window = nonzerox
+                self.right_nonzeroy_by_window = nonzeroy
 
         # Concatenate the arrays of indices
-        # TODO Frame @38s has right lane line broken, still needs improvement
         left_lane_inds = np.concatenate(self.left_lane_inds)
         right_lane_inds = np.concatenate(self.right_lane_inds)
 
-        # Extract left and right line pixel positions
-        leftx = nonzerox[left_lane_inds]
+        # If nothing detected, quick-and-dirty bogus response
+        if len(left_lane_inds) == 0 or len(right_lane_inds) == 0:
+            left_fitx = np.zeros(len(self.ploty))
+            right_fitx = np.zeros(len(self.ploty))
+            return out_img, self.ploty, left_fitx, right_fitx, self.left_lane_centers, self.right_lane_centers
+
+        # Extract left and right lane line pixel positions
+        # TODO nonzerox & nonzeroy values here must be saved per-window to allow referring to old "cached" windows
+        leftx = self.left_nonzerox[left_lane_inds]
         lefty = nonzeroy[left_lane_inds]
         rightx = nonzerox[right_lane_inds]
         righty = nonzeroy[right_lane_inds]
 
-        # Fit a second order polynomial to each
+        # Fit a second order polynomial to each and
+        # generate x and y values for plotting.
+        # (ploty is just a range from 0 to height of binary_warped)
         left_fit = np.polyfit(lefty, leftx, 2)
-        right_fit = np.polyfit(righty, rightx, 2)
-
-        # Generate x and y values for plotting. ploty is just a range from 0 to height of binary_warped
         left_fitx = left_fit[0]*self.ploty**2 + left_fit[1]*self.ploty + left_fit[2]
+
+        right_fit = np.polyfit(righty, rightx, 2)
         right_fitx = right_fit[0]*self.ploty**2 + right_fit[1]*self.ploty + right_fit[2]
 
         out_img = self.draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, self.ploty)
@@ -267,9 +278,7 @@ class LaneFinder:
         # out_img can be displayed for debugging/visualization purposes
         return out_img, self.ploty, left_fitx, right_fitx, self.left_lane_centers, self.right_lane_centers
 
-
-    # Googled for cv2.fillPoly/cv2.polylines usage and found this function (slightly modified) at
-    # https://github.com/rioffe/CarND-Advanced-Lane-Lines-Solution
+    # From "33. Finding the Lines - Visualization" with modifications
     #
     # Sort of like
     # plt.plot(left_fitx, ploty, color='yellow')
@@ -435,7 +444,7 @@ def process_video(input, output, process_image_fun):
 def lanelines_main():
     dist, mtx = calibration_params()
     part_process_image = partial(process_image, mtx=mtx, dist=dist, lane_finder=LaneFinder())
-    process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
+    #process_video('project_video.mp4', 'output_images/project_video_out.mp4', part_process_image)
 
     part_process_image = partial(process_image, mtx=mtx, dist=dist, lane_finder=LaneFinder())
     process_video('challenge_video.mp4', 'output_images/challenge_video_out.mp4', part_process_image)
