@@ -307,8 +307,8 @@ def radius_of_curvature(ploty, left_fit, right_fit):
     # and lane lines each are (also according to 35. Measuring Curvature") 10ft/3m.
     # A lane line of 3 m is about 130 pixels long
     # Lane lines are 3.7 m which is about 400 pixels apart
-    ym_per_pix = 3/130   # meters per pixel in y dimension
-    xm_per_pix = 3.7/400  # meters per pixel in x dimension
+    ym_per_pix = 3./130.   # meters per pixel in y dimension
+    xm_per_pix = 3.7/400.  # meters per pixel in x dimension
 
     # Fit new polynomials to x,y in world space
     left_fit_cr = np.polyfit(ploty*ym_per_pix, left_fit*xm_per_pix, 2)
@@ -349,7 +349,7 @@ def sideways_offset_lane_center(width, left_centers, right_centers):
     bottom_right = right_centers[0]
     lanes_center = np.mean([bottom_left, bottom_right])
     # use same conversion as radius_of_curvature() above
-    meters_sideways_offset = (lanes_center - camera_center) * (3.7/700)
+    meters_sideways_offset = (lanes_center - camera_center) * (3.7/400.)
     return meters_sideways_offset
 
 
@@ -432,7 +432,6 @@ def transform_src_and_dst(img):
     height, width = img.shape[:2]
     # Origin is top left corner, y increases downwards
     # source below keeps a good margin to the horizon to get clear markings all the way
-    # height of region-of-interest is 682-464 = 218 pixels
     src = np.float32([[578, 464], [708, 464], [258, 682], [1050, 682]])
     dst = np.float32([[470, 0], [width - 470, 0], [450, height], [width - 450, height]])
     return src, dst
