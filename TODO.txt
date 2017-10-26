@@ -1,0 +1,21 @@
+TODO - Future possible improvements
+-----------------------------------
+
+Review feedback, 1st review:
+----------------------------
+Search future frames based on past frame lane lines:
+https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/2b62a1c3-e151-4a0e-b6b6-e424fa46ceab/lessons/40ec78ee-fb7c-4b53-94a8-028c5c60b858/concepts/c41a4b6b-9e57-44e6-9df9-7e4e74a1a49a
+scroll down to the section titled "Skip the sliding windows step once you know where the lines are"
+
+Or, probably better, save per-detection-window state and reuse earlier frame with better-quality data.
+
+
+Review feedback, 2nd review:
+----------------------------
+This research paper http://airccj.org/CSCP/vol5/csit53211.pdf goes into how to detect curves
+and will also help in detecting faded lanes. It uses an extended version of hough lines algorithm
+to detect tangents to the curve which can help you detect the curve.
+
+Here is another paper http://www.vision.caltech.edu/malaa/publications/aly08realtime.pdf
+which talks about real time lane detection.
+
