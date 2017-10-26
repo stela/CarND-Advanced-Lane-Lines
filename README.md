@@ -80,48 +80,48 @@ Here's an example of my output for this step, using the previous undistorted ima
 The code for my perspective transform includes the function [dashboard_to_overhead()](lanelines.py#L148).  The `dashboard_to_overhead()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
 
 ```python
-    src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
-    dst = np.float32([[450, 0], [width - 450, 0], [450, height], [width-450, height]])
+    src = np.float32([[578, 464], [708, 464], [258, 682], [1050, 682]])
+    dst = np.float32([[470, 0], [width - 470, 0], [450, height], [width - 450, height]])
 ```
 
-This resulted in the following source and destination points:
+The source coordinates above were measured from one of the test images, `straight_lines1.jpg`, with a straight piece of road. This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 610, 441      | 450, 0        |
-| 669, 441      | 830, 0        |
+| 578, 464      | 470, 0        |
+| 708, 464      | 830, 0        |
 | 258, 682      | 450, 720      |
-| 1049, 682     | 830, 720      |
+| 1050, 682     | 830, 720      |
 
-I verified that my perspective transform was working as expected by comparing the `src` and `dst` points onto the `straight_lines1.jpg` test image and its warped counterpart and verifying that they are on the same spot on the road and appear parallel in the warped image.
+I verified that my perspective transform was working as expected by comparing the `src` and `dst` points projected onto the `straight_lines1.jpg` test image and its warped counterpart and verifying that they are on the same spot on the road and that the lane lines appear parallel in the warped image.
 
 ![warped image][straight_lines1_warped]
 
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-The lane-line pixels are identified in [find_lane_lines()](lanelines.py#L130). To get a rough estimate of where the left and right lane lines are located, first for the bottom two quadrants of the image, the x-locations with the max intensities are located. Then by stepping through "windows" (vertical slices of the image) where enough potential lane-line pixels are found, the mean location of those lane line pixels are used as the lane line position if there was a match. This is repeated for all the windows, searching only in the neighbourhood of the previous window identified to improve performance and accuracy.
+The lane-line pixels are identified in [find_lane_lines()](lanelines.py#L166). To get a rough estimate of where the left and right lane lines are located, first for the bottom two quadrants of the image, the x-locations with the max intensities are located. Then by stepping through "windows" (vertical slices of the image) where enough potential lane-line pixels are found, the mean location of those lane line pixels are used as the lane line position if there was a match. This is repeated for all the windows, searching only in the neighbourhood of the previous window identified to improve performance and accuracy.
 
-At the end of the [find_lane_lines()](lanelines.py#L205) function, second-order polynomials are determined for the left and right lane lines.
+At the end of the [find_lane_lines()](lanelines.py#L205) function, second-order polynomials are determined for the left and right lane lines. In case there were either not enough lane line points detected, or the fit polynomial parameters are obviously out of normal range, information returned from a previous frame is returned instead. This prevents occasional frames with difficult-to-interpret data to return unsafe lane line estimates.
 
-Below is an example of a curve (test_images_test5.jpg) where the windows are visible and polynomials are plotted.
+Below is an example of a curve (originally [test_images/test5.jpg](test_images/test5.jpg) where the windows are visible and polynomials are plotted.
 
 ![warped annotated curve][warped_annotated_curve]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-The radius of curvature was calculated in the function [radius_of_curvature()](lanelines.py#L249) based on the polynomials identified earlier. The radii is calculated as
+The radius of curvature was calculated in the function [radius_of_curvature()](lanelines.py#L303) based on the polynomials identified earlier. The radii is calculated as
 ```python
 left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
 right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
 ```
-The pixel-measurements are scaled with an y factor of 30/720 and an x factor of 3.7/700, which gave me radii of 388 m and 562 m, when the correct radius should have been around 1000m. Close enough I think ;-)
+The pixel-measurements are scaled with an y factor of 3/130 and an x factor of 3.7/400, which gave me radii of 290 m and 423 m, when the correct radius should have been around 1000m. Close enough I think ;-)
 
-The offset from the center of the lane was calculated in the function [sideways_offset_lane_center()](lanelines.py#L269) by averaging the x-coordinates of the left and right lane lines at the bottom of the image, calculating that point's offset from the center and multiplying it by the x-meter-per-pixel scaling factor.
+The offset from the center of the lane was calculated in the function [sideways_offset_lane_center()](lanelines.py#L327) by averaging the x-coordinates of the left and right lane lines at the bottom of the image, calculating that point's offset from the center and multiplying it by the x-meter-per-pixel scaling factor.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in the function [process_image()](lanelines.py#L316). Here is an example of my result on a test image:
+I implemented this step in the function [process_image()](lanelines.py#L382). Here is an example of my result on a test image:
 
 ![Final result example][curve_result]
 
@@ -139,7 +139,7 @@ Here's a [link to my video result](./output_images/project_video_out.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-The calibration and distortion correction were done using the provided camera-calibration images. For the thresholding, a more adaptive approach would probably have yielded better results than using fixed thresholds. My current solution doesn't preserve information between frames, if I would have used the detection-windows from the previous frame as a starting point the results would probably have been better. Also some kind of moving average or low-pass-filter could be applied to the lane line positions, this would have yielded smoother output and would avoid spurious errors. In case of many other cars blocking the view ahead, one could assume that most cars would drive within lane markings in order to augment missing data.   
+The calibration and distortion correction were done using the provided camera-calibration images. For the thresholding, a more adaptive approach would probably have yielded better results than using fixed thresholds. My current solution doesn't preserve per-window information between frames, if I would have used the detection-windows from previous frames as a starting point the results would probably have been better. Also some kind of moving average or low-pass-filter could be applied to the lane line positions, this would have yielded smoother output and would avoid spurious errors. In case of many other cars blocking the view ahead, one could assume that most cars would drive within lane markings in order to augment missing data.
 
 A different, hopefully more robust, approach to detecting the lane lines would be to train a recurrent convolutional network, searching Google for that provides lots of papers about recognizing objects in videos, it ought to work with lane lines too I assume as it works for more complex objects like e.g. finding people in a video stream. This would be interesting to experiment with, but I didn't find spare time to do so yet. 
 
