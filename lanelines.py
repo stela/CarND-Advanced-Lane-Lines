@@ -302,8 +302,13 @@ def draw_lane_polynomial(out_img, left_fitx, right_fitx, margin, ploty):
 # "35. Measuring Curvature"
 def radius_of_curvature(ploty, left_fit, right_fit):
     # Define conversions in x and y from pixels space to meters
-    ym_per_pix = 30/720 # meters per pixel in y dimension
-    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    # According to https://mutcd.fhwa.dot.gov/pdfs/millennium/06.14.01/3ndi.pdf 3A.06
+    # (which seems to apply here), rural highway lane markings occur at 40ft/12m intervals
+    # and lane lines each are (also according to 35. Measuring Curvature") 10ft/3m.
+    # A lane line of 3 m is about 130 pixels long
+    # Lane lines are 3.7 m which is about 400 pixels apart
+    ym_per_pix = 3/130   # meters per pixel in y dimension
+    xm_per_pix = 3.7/400  # meters per pixel in x dimension
 
     # Fit new polynomials to x,y in world space
     left_fit_cr = np.polyfit(ploty*ym_per_pix, left_fit*xm_per_pix, 2)
@@ -312,10 +317,9 @@ def radius_of_curvature(ploty, left_fit, right_fit):
     y_eval = np.max(ploty)
     left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
-    # Now our radius of curvature is in meters
-    # Example values: 632.1 m    626.2 m
+    # Radius of curvature is in meters
     #
-    # Using "test2.jpg" which seems to be the location with 1 km radius, I get left: 388 m and right: 562 m
+    # Using "test2.jpg" which seems to be the location with 1 km radius, I get left: 290 m and right: 423 m
     # Close enough to 1 km I guess ;-)
     return left_curverad, right_curverad
 
@@ -427,7 +431,8 @@ def process_image(original_img, mtx, dist, conv_rgb_to_bgr=True):
 def transform_src_and_dst(img):
     height, width = img.shape[:2]
     # Origin is top left corner, y increases downwards
-    # source below goes (too?) far ahead almost to horizon
+    # source below keeps a good margin to the horizon to get clear markings all the way
+    # height of region-of-interest is 682-464 = 218 pixels
     src = np.float32([[578, 464], [708, 464], [258, 682], [1050, 682]])
     dst = np.float32([[470, 0], [width - 470, 0], [450, height], [width - 450, height]])
     return src, dst

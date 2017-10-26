@@ -6,6 +6,7 @@ import lanelines as ll
 # Inputs
 calibration_f_name = 'camera_cal/calibration1.jpg'
 test1_f_name = 'test_images/test1.jpg'
+test2_f_name = 'test_images/test2.jpg'
 straight_lines1_f_name = 'test_images/straight_lines1.jpg'
 curve_f_name = 'test_images/test5.jpg'
 dirty_f_name = 'test_images/dirty_border_noise.png'
@@ -21,9 +22,11 @@ warped_f_name = 'output_images/straight_lines1_warped.jpg'
 warped_dirty_f_name = 'output_images/dirty_warped.jpg'
 curve_warped_annotated_f_name = 'output_images/curve_warped_annotated.jpg'
 dirty_warped_annotated_f_name = 'output_images/dirty_border_noise_annotated.jpg'
+test2_annotated_f_name = 'output_images/test2_annotated.jpg'
+test2_result_f_name = 'output_images/test2_result.jpg'
 curve_result_f_name = 'output_images/curve_result.jpg'
 dirty_result_f_name = 'output_images/dirty_border_noise_result.jpg'
-few_lane_pixels_result_f_name = 'output_images/few_lane_pixels_result.jpg'
+few_lane_pixels_annotated_f_name = 'output_images/few_lane_pixels_annotated.jpg'
 
 
 def main():
@@ -47,7 +50,7 @@ def main():
     undistorted_straight_lines1_image = ll.undistort_image(straight_lines1_img, mtx, dist)
 
     few_lane_pixels_img = cv2.imread(few_lane_pixels_f_name)
-    undistorted_few_lane_pixels_img = ll.undistort_image(few_lane_pixels_img, mtx, dist)
+    test2_img = cv2.imread(test2_f_name)
 
     # Generate combined thresholds of the previous images
     color_binary, combined_binary = ll.threshold_pipeline(undistorted_test1_image)
@@ -80,7 +83,10 @@ def main():
     cv2.imwrite(dirty_warped_annotated_f_name, dirty_annotated_image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
     few_lane_pixels_annotated_image = process_image_to_annotaded_overhead(few_lane_pixels_img, mtx, dist)
-    cv2.imwrite(few_lane_pixels_result_f_name, few_lane_pixels_annotated_image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+    cv2.imwrite(few_lane_pixels_annotated_f_name, few_lane_pixels_annotated_image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+
+    test2_annotated_image = process_image_to_annotaded_overhead(few_lane_pixels_img, mtx, dist)
+    cv2.imwrite(test2_annotated_f_name, test2_annotated_image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
     # Generate final video frames using sample images
     curve_result_img = ll.process_image(curve_image, mtx, dist, False)
@@ -88,6 +94,9 @@ def main():
 
     dirty_result_img = ll.process_image(dirty_image, mtx, dist, False)
     cv2.imwrite(dirty_result_f_name, dirty_result_img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+
+    test2_result_img = ll.process_image(test2_img, mtx, dist, False)
+    cv2.imwrite(test2_result_f_name, test2_result_img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
 
     return
 
