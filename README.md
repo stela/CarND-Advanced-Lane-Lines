@@ -102,7 +102,7 @@ I verified that my perspective transform was working as expected by comparing th
 
 The lane-line pixels are identified in [find_lane_lines()](lanelines.py#L166). To get a rough estimate of where the left and right lane lines are located, first for the bottom two quadrants of the image, the x-locations with the max intensities are located. Then by stepping through "windows" (vertical slices of the image) where enough potential lane-line pixels are found, the mean location of those lane line pixels are used as the lane line position if there was a match. This is repeated for all the windows, searching only in the neighbourhood of the previous window identified to improve performance and accuracy.
 
-At the end of the [find_lane_lines()](lanelines.py#L205) function, second-order polynomials are determined for the left and right lane lines. In case there were either not enough lane line points detected, or the fit polynomial parameters are obviously out of normal range, information returned from a previous frame is returned instead. This prevents occasional frames with difficult-to-interpret data to return unsafe lane line estimates.
+At the end of the [find_lane_lines()](lanelines.py#L253) function, second-order polynomials are determined for the left and right lane lines. In case there were either not enough lane line points detected, or the fit polynomial parameters are obviously out of normal range, information returned from a previous frame is returned instead. This prevents occasional frames with difficult-to-interpret data to return unsafe lane line estimates.
 
 Below is an example of a curve (originally [test_images/test5.jpg](test_images/test5.jpg) where the windows are visible and polynomials are plotted.
 
