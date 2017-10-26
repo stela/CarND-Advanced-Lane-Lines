@@ -45,11 +45,11 @@ The complete implementation is in the file [lanelines.py](lanelines.py). Any fun
 
 #### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The main code for this step is contained in the [calibration_params()](lanelines.py#L69) function of the file `lanelines.py`). It calls [accumulate_calibration()](lanelines.py#L39) for each input calibration image.
+The main code for this step is contained in the [calibration_params()](lanelines.py#L74) function of the file `lanelines.py`). It calls [accumulate_calibration()](lanelines.py#L43) for each input calibration image.
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.
 
-Then in [image_calibration_params()](lanelines.py#L64) I used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function in [undistort_image()](lanelines.py#L85)and obtained this result on one of the calibration images:
+Then in [image_calibration_params()](lanelines.py#L68) I used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function in [undistort_image()](lanelines.py#L90)and obtained this result on one of the calibration images:
 
 Distorted original:
 
@@ -63,13 +63,13 @@ Undistorded:
 
 #### 1. Provide an example of a distortion-corrected image.
 
-For each video frame the process is similar, to correcting a calibration image, just use the same parameters and the function [undistort_image()](lanelines.py#L85) on an image, below as an example the `test_images/test1.jpg` corrected:
+For each video frame the process is similar, to correcting a calibration image, just use the same parameters and the function [undistort_image()](lanelines.py#L90) on an image, below as an example the `test_images/test1.jpg` corrected:
 
 ![test1 undistorted][undistorted_test1]
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image. Color thresholding was done on on the S channel of the HLS color space. Gradient thresholding was done on the L channel, using the Sobel operator to detect vertical lines. You can find the algorith in the function [threshold_pipeline()](lanelines.py#L91). The red areas are by color thresholding, the green is by gradient thresholding. As you can see in the example output they complement each other for detection of lane lines.
+I used a combination of color and gradient thresholds to generate a binary image. Color thresholding was done on on the S channel of the HLS color space. Yellow lines were detected by gradient thresholding on the L and B channels. White lines were detected using gradient thresholding on the L channel of the LUV color space. Extra lane line pixels were detected using the Sobel operator to detect vertical lines, using the HLS L channel. You can find the algorith in the function [threshold_pipeline()](lanelines.py#L96). The blue and red areas are by color thresholding (to detect yellow and white lane lines, respectively), the green is by gradient thresholding. As you can see in the example output they complement each other nicely for detection of lane lines.
 
 Here's an example of my output for this step, using the previous undistorted image as input:
 
@@ -77,7 +77,7 @@ Here's an example of my output for this step, using the previous undistorted ima
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes the function [dashboard_to_overhead()](lanelines.py#L121).  The `dashboard_to_overhead()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes the function [dashboard_to_overhead()](lanelines.py#L148).  The `dashboard_to_overhead()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
 
 ```python
     src = np.float32([[610, 441], [669, 441], [258, 682], [1049, 682]])
